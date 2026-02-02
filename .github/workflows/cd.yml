@@ -2,7 +2,7 @@ name: Orchestrate Production Image
 
 on:
   repository_dispatch:
-    types: [trigger-deploy]
+    types: ["People Portal UI Deploy Request", "People Portal Server Deploy Request"]
   workflow_dispatch:
 
 concurrency:
