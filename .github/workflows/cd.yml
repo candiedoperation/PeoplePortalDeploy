@@ -45,6 +45,8 @@ jobs:
         with:
           context: .
           push: true
+          platforms: linux/amd64,linux/arm64 # Support both ARM and x64.
+          
           # Tags: 'latest' for the live app, and 'SHA' for version history
           tags: |
             candiedoperation/people-portal:latest
