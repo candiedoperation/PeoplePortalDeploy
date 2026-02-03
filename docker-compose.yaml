@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  app:
+    container_name: people-portal
+    image: candiedoperation/people-portal:latest
+
+    env_file:
+      - .env
+    
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.people-portal.rule=Host(`${DOMAIN_NAME}`)"
+      - "traefik.http.routers.people-portal.entrypoints=websecure"
+      - "traefik.http.routers.people-portal.tls.certresolver=myresolver"
+      - "traefik.http.services.people-portal.loadbalancer.server.port=3000"
+
+  traefik:
+    image: "traefik:v3.3"
+    container_name: "traefik"
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
+      - "--entrypoints.websecure.address=:443"
+      - "--certificatesresolvers.myresolver.acme.tlschallenge=true"
+      - "--certificatesresolvers.myresolver.acme.email=${ACME_EMAIL}"
+      - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
+
+    ports:
+      - "80:80"
+      - "443:443"
+    
+    volumes:
+      - "./letsencrypt:/letsencrypt"
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
