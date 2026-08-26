@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   app:
     container_name: people-portal
@@ -7,6 +5,9 @@ services:
 
     env_file:
       - .env
+
+    environment:
+      PHOTO_CHECK_URL: ${PHOTO_CHECK_URL:-http://pfp-face-check:8001}
     
     extra_hosts:
       - "host.docker.internal:host-gateway"
@@ -17,6 +18,24 @@ services:
       - "traefik.http.routers.people-portal.entrypoints=websecure"
       - "traefik.http.routers.people-portal.tls.certresolver=myresolver"
       - "traefik.http.services.people-portal.loadbalancer.server.port=3000"
+
+  pfp-face-check:
+    container_name: pfp-face-check
+    image: candiedoperation/pfp-face-check:latest
+    restart: unless-stopped
+
+    expose:
+      - "8001"
+
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/health', timeout=2)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+    labels:
+      - "traefik.enable=false"
 
   traefik:
     image: "traefik:v3.3"
