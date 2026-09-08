@@ -5,8 +5,21 @@ services:
     container_name: people-portal
     image: candiedoperation/people-portal:latest
 
+    # Applied by hand on the VM and never committed, so a `git pull` would have
+    # silently reverted it: without this the container stays down after a crash
+    # or a host reboot.
+    restart: unless-stopped
+
     env_file:
       - .env
+
+    # peopleportalredis: private-CA cert so Node trusts the rediss:// endpoint.
+    # Public cert, safe to commit. Password lives in .env, never here.
+    environment:
+      - NODE_EXTRA_CA_CERTS=/etc/ssl/certs/peopleportalredis-ca.crt
+
+    volumes:
+      - "./peopleportalredis-ca.crt:/etc/ssl/certs/peopleportalredis-ca.crt:ro"
     
     extra_hosts:
       - "host.docker.internal:host-gateway"
@@ -18,9 +31,18 @@ services:
       - "traefik.http.routers.people-portal.tls.certresolver=myresolver"
       - "traefik.http.services.people-portal.loadbalancer.server.port=3000"
 
+    # Also carried over from the VM. Keeps a leak in the app from starving
+    # traefik and taking the whole host down with it.
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
   traefik:
     image: "traefik:v3.3"
     container_name: "traefik"
+    restart: unless-stopped
+
     command:
       - "--api.insecure=true"
       - "--providers.docker=true"
