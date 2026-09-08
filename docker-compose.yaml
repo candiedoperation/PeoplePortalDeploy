@@ -7,6 +7,14 @@ services:
 
     env_file:
       - .env
+
+    # peopleportalredis: private-CA cert so Node trusts the rediss:// endpoint.
+    # Public cert, safe to commit. Password lives in .env, never here.
+    environment:
+      - NODE_EXTRA_CA_CERTS=/etc/ssl/certs/peopleportalredis-ca.crt
+
+    volumes:
+      - "./peopleportalredis-ca.crt:/etc/ssl/certs/peopleportalredis-ca.crt:ro"
     
     extra_hosts:
       - "host.docker.internal:host-gateway"
