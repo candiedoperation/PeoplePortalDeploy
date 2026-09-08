@@ -5,6 +5,11 @@ services:
     container_name: people-portal
     image: candiedoperation/people-portal:latest
 
+    # Applied by hand on the VM and never committed, so a `git pull` would have
+    # silently reverted it: without this the container stays down after a crash
+    # or a host reboot.
+    restart: unless-stopped
+
     env_file:
       - .env
 
@@ -26,9 +31,18 @@ services:
       - "traefik.http.routers.people-portal.tls.certresolver=myresolver"
       - "traefik.http.services.people-portal.loadbalancer.server.port=3000"
 
+    # Also carried over from the VM. Keeps a leak in the app from starving
+    # traefik and taking the whole host down with it.
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
   traefik:
     image: "traefik:v3.3"
     container_name: "traefik"
+    restart: unless-stopped
+
     command:
       - "--api.insecure=true"
       - "--providers.docker=true"
